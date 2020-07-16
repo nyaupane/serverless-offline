@@ -1,0 +1,49 @@
+service: codecentric-sls-offline
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline  # should be last in list
+
+custom:
+  endpoints:
+    dynamodb-url: 'http://localhost:8000'
+
+  tableNames:
+    persons: 'contract-documents'
+
+  bucketNames:
+    personsImages: 'documents-images'
+
+  dynamodb:
+    start:
+      migrate: true
+    stages:
+      - dev
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: eu-central-1
+  environment:
+    CONFIG_PERSONS_TABLE: ${self:custom.tableNames.persons}
+    CONFIG_DYNAMODB_ENDPOINT: ${self:custom.endpoints.dynamodb-url}
+
+
+functions:
+
+  persons:
+    timeout: 30
+    runtime: nodejs8.10
+    handler: handler/persons.handler
+    events:
+      - http:
+          path: /contracts
+          method: get
+          cors: true
+      - http:
+          path: /contracts
+          method: post
+          cors: true
+
+resources:
+  - ${file(resources/persons-table.yml)}
